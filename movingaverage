@@ -1,0 +1,188 @@
+// Jasmine Ortega
+// Assignment 8, CS 160 Summer 2020
+// Date: July 30th, 2020
+// The purpose of this program is to create a randomized array, count and print it's elements, apply a moving average function, then recount and print it's elements
+// Sources: cplusplus.com: "rand()", "rand always gives same #", geeksforgeeks.com "printing pyramid patterns"
+
+#include <iostream>
+#include <stdlib.h>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+// globally define size of array
+const int SIZE = 20;
+
+// user defined prototypes
+void fill(int arr[SIZE]); // fills array with random numbers
+void print(int arr[SIZE]); // prints out array
+void movingAverage(int arr[SIZE]); // finds average of neighbor numbers in array, updates array to reflect new values
+
+ // main function
+int main() {
+    
+    // Declare and fill an array
+    int myArray[SIZE];
+    fill(myArray);
+    
+    // then print its values and ranges
+    print(myArray);
+
+    // use movingAverage function ten times
+    for (int i = 0; i < 10; i++) {
+        cout << "Round " << i+1 << ": ";
+        movingAverage(myArray);
+        cout << endl;
+        }
+    
+    // reprint the ranges
+      print(myArray);
+
+    return 0;
+}
+
+// function defintion for filling array with random # between 0 - 100
+void fill(int arr[SIZE]) {
+        
+    srand(time(0));   // generate a new seed for rand()
+    
+    // fill array with random numbers
+       for (int i = 0; i < SIZE; i++) {
+          int arrayFill = rand () % 100; // generates random number
+           arr[i] = {arrayFill}; // assigns random number to array
+       }
+}
+ 
+// function prints out values of arrray
+void print(int arr[SIZE]) {
+    
+    // declare variables for the range bins (all numbers in array between 0 - 100 = 10 bins of increments of 10)
+    int one = 0, teens = 0, twenties = 0, thirties = 0, forties = 0, fifties = 0, sixties = 0, seventies = 0, eighties = 0, nineties = 0;
+    
+    // define stars[10] to represent each bin
+    // ex: star[3] represents the count of all numbers between 30 - 39
+    int stars[10] = {0};
+    
+    // print current array elements
+    cout << "arr[" << SIZE << "] contains { ";
+    
+    // iterate through array[] and update stars[10] to count frequency of each bin number
+    for (int j = 0; j < SIZE; j++) {
+        cout << arr[j] << " ";
+        
+        // calculate which bin arr[j] belongs to by calculating num%10
+        int bin = (arr[j])/10;
+        
+    // use bin to update count of star[10]
+       switch (bin) {
+           case 0: one++;
+               stars[0] = one;
+                break;
+           
+           case 1: teens++; // for example: if bin == 1, add +1 to count
+               stars[1] = teens; // update variable at stars[1]
+                break;
+           
+           case 2: twenties++;
+               stars[2] = twenties;
+                break;
+                
+           case 3: thirties++;
+               stars[3] = thirties;
+                break;
+                
+           case 4: forties++;
+               stars[4] = forties;
+                break;
+                
+            case 5: fifties++;
+               stars[5] = fifties;
+                break;
+                
+            case 6: sixties++;
+               stars[6] = sixties;
+                break;
+                
+            case 7: seventies++;
+               stars[7] = seventies;
+                break;
+                
+            case 8: eighties++;
+               stars[8] = eighties;
+                break;
+                
+            case 9: nineties++;
+               stars[9] = nineties;
+                break;
+       }
+
+    }
+    cout << "}" << endl << endl;
+    
+    // print out stars[10]
+    for (int k = 0; k < 10; k++) {
+        
+        // print bin range (ie. 00, 20, etc) :
+        cout << k << "0: ";
+        
+        // print stars according to bin count stored in stars[k]
+        for (int t = 0; t < stars[k]; t++) {
+           cout << "*";
+        }
+        
+        cout << endl;
+        }
+    cout << endl;
+    }
+
+// function to find average of neighbor elements in input array, updates input array to reflect new values
+void movingAverage(int arr[SIZE]) {
+    
+    // moved[] will store movingAverage values until the end of calculations, othewise calculations = inaccurate bc we would be actively changing the original input array
+    int moved[SIZE] = {0};
+    
+    // loop through input array, starting with first element (will refer to this number as "n") to determine neighbor elements
+    for (int y = 0; y < SIZE; y++) {
+        int n = arr[y];
+        
+        // find "n"+1 (next element in input array)
+        for (int z = y + 1; z > y; z--) {
+            int n_plus = arr[z];
+            
+            // find "n"-1 (previous element in input array)
+            for (int x = y - 1; x < y; x++) {
+                int n_minus = arr [x];
+                
+                // if array[y] == 0 (first number in input array), don't use (n-1) in calculation
+                if (n == arr[0]) {
+                    
+                    // calculate average of first two numbers  = (n) + (n+1) / 2, store in moved[y]
+                    moved[y] = {(n + n_plus)/2};
+                    break;
+                }
+                
+                // if array[y] == array[SIZE - 1] (last element in array), don't use in n+1 in calculation
+                if (n == arr[SIZE - 1]) {
+                    
+                     // calculate average of (n-1) + (n) / 2, store in moved[y]
+                    moved [y] = {(n_minus + n)/2};
+                    break;
+                }
+                
+                // otherwise, calculate average of (n-1) + (n) + (n+1) / 3, store in moved[y]
+               else moved[y] = {(n_minus + n + n_plus)/3};
+            }
+        }
+    }
+    // moved[SIZE] now contains all new moving average values
+    // update input array to reflect values in moved[SIZE]
+    cout << endl << "movingAverage() = { ";
+    
+      for (int y = 0; y < SIZE; y++) {
+          arr[y] = moved[y]; // iterates through entire array and replaces value with new moving avg
+          cout << arr[y] << " "; // print updated input array
+      }
+    
+    cout << "}" << endl;
+}

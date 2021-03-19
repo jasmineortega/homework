@@ -1,0 +1,54 @@
+// Name: Jasmine Ortega
+// July 22, 2020
+// CS 161 Summer 2020 Midterm
+// This program reads numbers from user input until a negative number is input. It outputs the sum and count of all single digit numbers entered, and double digit numbers entered.
+// Sources: C++ book
+
+#include <iostream>
+
+using namespace std;
+ 
+int main(){
+    
+    // declare variables
+    // od = one digit, td = two digit
+    int inputNum, od_Sum = 0, td_Sum = 0, od_Count = 0, td_Count = 0;
+    
+    // do... while loop for user input
+    do{
+        cout << "Please enter a number: " << endl;
+        cin >> inputNum;
+        
+        // if input number is single digit (including zero)
+        if (inputNum >= 0 && inputNum < 10) {
+            od_Count++; // update count of one digit count
+            od_Sum += inputNum; // add number to sum of one digit numbers
+        }
+        
+        // if input number is double digit
+        else if (inputNum >= 10 && inputNum < 100) {
+            td_Count++; // update count of two digit count
+            td_Sum += inputNum; // add number to sum of two digit numbers
+        }
+        
+        // if input number isn't in range of 0 - 99 (single or double digit), ignore
+        else if (inputNum >= 100) {
+            continue;
+        }
+        
+        // if initial input number in loop is negative, exit loop
+        else break;
+     
+    }
+    // repeat until a negative number is entered by user
+    while (inputNum >= 0);
+    
+    // print count, sum of single digit input; count, sum of double digit input
+    cout << endl;
+    cout << "Count of one digit numbers entered = " << od_Count << endl;
+    cout << "Sum of one digit numbers entered = " << od_Sum << endl;
+    cout << "Count of two digit numbers entered = " << td_Count << endl;
+    cout << "Sum of one digit numbers entered = " << td_Sum << endl;
+    
+    return 0;
+}

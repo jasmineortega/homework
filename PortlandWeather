@@ -1,0 +1,620 @@
+// Jasmine Ortega
+// CS 160 Summer 2020, Assignment 10
+// 8/12/2020
+// This program creates a menu that allows user to load, print, search, and order weather data.
+// Sources: book, CPPreference.com ASCII chart,
+// https://stackoverflow.com/questions/33072293/reading-quoted-string-in-c
+// https://stackoverflow.com/questions/16348512/getting-the-first-10-characters-of-a-string,
+// http://www.cplusplus.com/reference/istream/istream/getline/
+// http://www.cplusplus.com/reference/string/string/find/
+// https://www.geeksforgeeks.org/bubble-sort/
+
+// /Users/Jasmine/Desktop/weather.txt
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <iomanip>
+
+using namespace std;
+
+// declare struct to store weather
+    struct Weather {
+    int month;
+    int date;
+    int high;
+    int avg;
+    int low;
+    double precip;
+    string event;
+    };
+
+// prototypes
+int loadData(ifstream &file, Weather days[1000]);
+
+void printData(Weather days[1000], int count);
+
+void searchData(Weather days[1000], int count);
+
+void orderData(Weather days[1000], int count);
+
+// main function
+int main(){
+    
+    
+    // declare variables
+    ifstream inputFile;
+    string inputPath;
+    int count = 331;
+    char user_input = 0;
+    
+    // define data structure
+    Weather days[1000];
+    
+    // welcome message
+      cout << "**** Welcome to the Portland Weather Analyzer! ****" << endl;
+      cout << "   ** (Spoiler alert: it's probably raining) **" << endl << endl;
+
+    
+    // as long as user input is not q (for quit), keep prompting for menu/user input
+       while (!(user_input == 'q')) {
+           
+           // prompt for menu/user input
+           cout << "[Menu]: Would you like to (l)oad data, (p)rint data, (s)earch data, (o)rder the data, or (q)uit?" << endl;
+           cin >> user_input;
+           
+           // user input tells us what the user wants to do, use switch to separate load, print, search, and order data functions
+           switch(user_input) {
+            
+                // user input == l; load the data
+                case 'l': {
+                   
+                   // ask for path to open weather file
+                   cout << "Please enter the file path:  " << endl;
+                   cin >> inputPath;
+                   
+                   // open file
+                   inputFile.open(inputPath);
+                    
+                    // make sure file path is valid, otherwise exit program
+                    if (!inputFile.is_open()) {
+                        cout << " **** File path didn't work. Try again! ****" << endl;
+                        return 1;
+                    }
+                    
+                    // call to loadData function
+                   loadData(inputFile, days);
+                   cout << "Woohoo! File loaded, 331 records available to search." << endl;
+                    
+                   break;
+                }
+                   
+                // user_input == p; print the data
+               case 'p': {
+                   
+                   // print current order of array, call to printData function
+                   printData(days, count);
+                   break;
+               }
+                   
+                // user_input == s; search the data
+               case 's':  {
+                   
+                   // call to searchData function
+                   searchData(days, count);
+                   break;
+               }
+                
+                // user_input == o; order the data
+               case 'o': {
+                   
+                   // call to orderData function
+                   orderData(days, count);
+                   break;
+               }
+           }
+       }
+
+    // when user input == q, print exit message
+    cout << "**** Thanks, come again! ****" << endl;
+
+    // close file
+    inputFile.close();
+   
+    return 0;
+}
+
+// user defined function to load file data into array days[1000]
+int loadData(ifstream &file, Weather days[1000]) {
+int i = 0, num_days, month_counter = 1;
+char dummy;
+    
+    // extract data until month_counter < 12 (data only goes until november = 11)
+    while(month_counter < 12) {
+         
+        // ignore the first two lines of text in file because they are headers
+           file.ignore(100, '\n');
+           file.ignore(100, '\n');
+            
+        // determine how many days in each month, based off value of month_counter; will use in next loop
+            switch(month_counter) {
+                case 1: num_days = 31;
+                    break;
+                case 2: num_days = 28;
+                    break;
+                case 3: num_days = 31;
+                    break;
+                case 4: num_days = 30;
+                    break;
+                case 5: num_days = 31;
+                    break;
+                case 6: num_days = 30;
+                    break;
+                case 7: num_days = 31;
+                    break;
+                case 8: num_days = 31;
+                    break;
+                case 9: num_days = 30;
+                    break;
+                case 10: num_days = 31;
+                    break;
+                case 11: num_days = 27; // file only goes until nov 27
+                    break;
+                default: num_days = 0; // there shouldn't be any reason month_counter doesnt fit into any of the above switch cases, but just in case lol
+                    break;
+        }
+        
+        // iterate through file until counter < the number of days in the month
+       for (int counter = 0; counter < num_days; counter++) {
+           
+             // fill array[i] with struct weather data
+                  days[i].month = month_counter;
+                  file >> days[i].date;
+                  file >> days[i].high;
+                  file >> days[i].avg;
+                  file >> days[i].low;
+                  file >> days[i].precip;
+           
+            // event, the last data type we need to extract, is a special case because the value in the column can be empty (not always a string present)
+            // so we need to determine if there is a string present in the event column, and if not, fill the event with a blank
+            char test1, test2;
+            string event_input;
+            
+            // gets the next char in file, which is a blank between columns
+            file.get(test1);
+            
+            // get the next character in file (aka the first character in event column) and store in test2
+            // if a string is present, test2 == quotation mark or test2 == letter
+            file.get(test2);
+           
+            //  if test2 contains a quotation mark, extract the characters between the quotes and insert into days[counter].event
+            //  34 = " in ASCII
+            if (test2 == 34) {
+                getline(file, event_input, '\"');
+                days[i].event = event_input;
+            }
+            
+            // if test2 contains an alphabetical value, putback test2 and extract string
+            // 65 = a in ASCII
+            else if (test2 >=65) {
+                file.putback(test2);
+                file >> days[i].event;
+            }
+           
+           // otherwise, event column is blank so days[i].event is empty
+            else days[i].event = " ";
+           
+           // increase value of i, iterate through loop until reach the number of days in month
+               i++;
+           
+        } // counter loop end bracket
+        
+            // once we iterate through all the days in month_counter, want to skip to next line, regardless where test2 left off
+            // file >> ensures that we arrive at the next line because the >> extractor reads through blanks and newlines
+            file >> dummy;
+        
+            // we have now completed data input for a particular month, move onto next month and repeat until while(month_counter < 12) == FALSE
+            month_counter++;
+        
+    } // end bracket for while (month_counter < 12)
+    
+    return 1;
+    
+} // end bracket for user defined function
+
+
+// user-defined function for printing data out to screen
+void printData(Weather days[1000], int count) {
+    
+    // format header of printed table
+    cout << left;
+    
+    // print out line of ------- for width of top of header labels
+    cout << " ";
+    for (int header = 0; header < 80; header++) {
+        cout << "-";
+    }
+    cout << endl;
+    
+    // print out header labels for each columns
+    cout << " | " << setw(7) << "Month" << setw(7) << "Date" << setw(7) << "High" << setw(7) << "Avg." << setw(7) << "Low" << setw(9) << "Precip."
+    << setw(33) << "Event" << "|" << endl;
+    
+    // print out line of ----- for width underneath header labels
+    cout <<  " ";
+    for (int under = 0; under < 80; under++) {
+        cout << "-";
+    }
+    cout << endl;
+    
+    // output data to screen
+    for (int j = 0; j < count; j++) {
+        cout << left;
+        cout << " | " << setw(7) << days[j].month
+            << setw(7) << days[j].date
+            << setw(7) << days[j].high
+            << setw(7) << days[j].avg
+            << setw(7) << days[j].low
+            << setw(9) << days[j].precip
+        << setw(32) << days[j].event << " | " << endl;
+    }
+
+     // print out line of ------- on bottom of table
+    cout << " ";
+    for (int bottom = 0; bottom < 80; bottom++) {
+        cout << "-";
+    }
+    cout << endl;
+    
+ } // end bracket for user defined function
+
+
+
+// function to search for records
+void searchData(Weather days[1000], int count) {
+    
+    // define variables
+    int search_month, search_day, search_avg, search_high, search_low;
+    double search_precip;
+    string search_event, temp_event;
+    char search_category;
+    
+    // ask what we should search data for
+    cout << "Would you like to search by (d)ate, temperature (h)igh, (a)vg, (l)ow, (p)recipitation, or (e)vents?" << endl;
+    cin >> search_category;
+    
+    // use search cateogry to decide what variables we need to search days[] for
+    switch (search_category) {
+         
+    // search records by specific date
+      case 'd': {
+          
+          // establish date to search by
+          cout <<  "What are the month and day of the record you'd like to search by?: " << endl;
+          cin >> search_month >> search_day;
+        
+          // search record for specified date
+          for (int j = 0; j < count; j++) {
+              
+              // when date is found, print the whole record for that day
+              if (days[j].month == search_month && days[j].date == search_day) {
+                  
+                  cout << "Record for " << search_month << "/" << search_day << ": ";
+                  cout << left;
+                  cout << setw(7) << days[j].month
+                      << setw(7) << days[j].date
+                      << setw(7) << days[j].high
+                      << setw(7) << days[j].avg
+                      << setw(7) << days[j].low
+                      << setw(9) << days[j].precip
+                  << setw(32) << days[j].event << endl;
+              }
+          }
+          break;
+      }
+    
+      // search records by specific high temperature
+      case 'h': {
+          
+          // establish temp high to search by
+          cout <<  "What is the temperature high you'd like to search by?: " << endl;
+          cin >> search_high;
+          
+          // search record for search_high
+          for (int j = 0; j < count; j++) {
+              
+              // if record contains search_high, print whole record for that day
+               if (days[j].high == search_high) {
+                   
+                   cout << "Record(s) for high temp of " << search_high << ": ";
+                   cout << left;
+                   cout << setw(7) << days[j].month
+                       << setw(7) << days[j].date
+                       << setw(7) << days[j].high
+                       << setw(7) << days[j].avg
+                       << setw(7) << days[j].low
+                       << setw(9) << days[j].precip
+                   << setw(32) << days[j].event << endl;
+               }
+            }
+          break;
+      }
+            
+    // search records by specific average temperatures
+            
+      case 'a': {
+          
+          // establish avg temp to search record for
+          cout << "What is the temperature average you'd like to search by?" << endl;
+          cin >> search_avg;
+          
+          // search record to search_avg
+          for (int j = 0; j < count; j++) {
+              
+              // if record contains search_avg, print whole record for that day
+              if (days[j].avg == search_avg) {
+                  
+                  cout << "Record(s) for avg temp of " << search_avg << ": ";
+                  cout << left;
+                  cout << setw(7) << days[j].month
+                      << setw(7) << days[j].date
+                      << setw(7) << days[j].high
+                      << setw(7) << days[j].avg
+                      << setw(7) << days[j].low
+                      << setw(9) << days[j].precip
+                  << setw(32) << days[j].event << endl;
+              }
+          }
+    
+          break;
+      }
+    
+    // search records for a specific low temperatures
+      case 'l': {
+          
+          // establish what low temp to search record for
+          cout << "What is the temparature low you'd like to search by?" << endl;
+          cin >> search_low;
+          
+          // search record for search_low
+          for (int j = 0; j < count; j++) {
+              
+                // if record contains search_low, print whole record for that day
+                   if (days[j].low == search_low) {
+                       
+                       cout << "Record(s) for avg low temp of " << search_low << ": ";
+                       cout << left;
+                       cout << setw(7) << days[j].month
+                           << setw(7) << days[j].date
+                           << setw(7) << days[j].high
+                           << setw(7) << days[j].avg
+                           << setw(7) << days[j].low
+                           << setw(9) << days[j].precip
+                       << setw(32) << days[j].event << endl;
+                       }
+            }
+          break;
+      }
+            
+    // search records for specific precip amount (inch)
+      case 'p': {
+          
+          // establish how many inches of precip to search record for
+          cout << "How many inches of precipitation would you like to search by?" << endl;
+          cin >> search_precip;
+          
+            // search record for search_precip
+            for (int j = 0; j < count; j++) {
+              
+                // if record contains search_precip, print whole record for that day
+                   if (days[j].precip == search_precip) {
+                       
+                       cout << "Record(s) for avg precipitation of " << search_precip << ": ";
+                       cout << left;
+                       cout << setw(7) << days[j].month
+                           << setw(7) << days[j].date
+                           << setw(7) << days[j].high
+                           << setw(7) << days[j].avg
+                           << setw(7) << days[j].low
+                           << setw(9) << days[j].precip
+                       << setw(32) << days[j].event << endl;
+                   }
+                }
+          break;
+      }
+            
+    // search records for specific weather event
+      case 'e': {
+          cout << "What weather event would you like to search by?" << endl;
+          cin >> search_event;
+          
+          // since multiple weather events possible in one day, we need to see if the event *contains* search_event
+          for (int j = 0; j < count; j++) {
+             temp_event = days[j].event;
+              
+              // use find() function to search to search for substring (search_event) in record days[j].event
+              // if substring is NOT found in string, the return value of find() = string::npos
+              // if statement based on results of (find () != string::npos)
+              if (temp_event.find(search_event) != string::npos) {
+                  
+                  // if specified weather event present in record, print out the whole record
+                           cout << "Record(s) for weather event " << search_event << ": ";
+                           cout << left;
+                           cout << setw(7) << days[j].month
+                              << setw(7) << days[j].date
+                              << setw(7) << days[j].high
+                              << setw(7) << days[j].avg
+                              << setw(7) << days[j].low
+                              << setw(9) << days[j].precip
+                              << days[j].event << endl;
+                }
+          }
+          break;
+      } // case e end bracket
+            
+  } // switch end bracket
+} // function end bracket
+
+// user defined function to order records
+void orderData(Weather days[1000], int count) {
+    
+    // define variables
+    int i, j;
+    char order_category;
+    
+    //ask for what to order data by
+    cout << "Would you like to order by (d)ate, temperature (h)igh, (a)vg, (l)ow, (p)recipitation, or (e)vents?" << endl;// order the data
+    cin >> order_category;
+    
+    // order data based on order_category specified from user input
+    switch (order_category) {
+            
+         // order data based on month and date
+         // ordering data by date (ascending) requires two sorts: one for # of date, and one for # of month
+          case 'd':{
+              
+              // First bubble sort algorithm orders all the # dates in the ascending order
+              // After first bubble sort, we are left with day[] in ascending order according to date, but not ordered by month.
+              // For ex: {...Jan 11, Feb 11, May 11, Nov 11, June 11...} is grouped by date, but the months are are not in order
+               for (i = 1; i < count; i++) {
+                   for (j = 0; j < count-i; j++) {
+                       
+                       // if days[j].date is bigger than days[j+1].date, swap the order of these two structs in array so the date is in ascending order
+                        if (days[j].date > days[j+1].date) {
+                            
+                            // when out of order = true, swap all the structs in days[], not just value of day[].date
+                               Weather temp = days[j];
+                               days[j] = days[j+1];
+                               days[j+1] = temp;
+                        }
+                   }
+                                              
+               }
+              
+              // Second bubble sort algorithm allows us to order the array by month, while maintaining the order of the days established in the first bubble sort
+              // From previous comment example: {...Jan 11, Feb 11, May 11, Nov 11, June 11...} would become {...Jan 11, Feb 11, March 11, May 11, June 11, July 11...}
+              for (i = 1; i < count; i++) {
+                  for (j = 0; j < count-i; j++) {
+                      
+                      // if days[j].month is bigger than days[j+1].month, swap the order of of these two structs in array so the month is in ascending order
+                       if (days[j].month > days[j+1].month) {
+                           
+                           // when out of order = true,  swap all the structs in days[], not just value of day[].month
+                              Weather temp = days[j];
+                              days[j] = days[j+1];
+                              days[j+1] = temp;
+                       }
+                  }
+                                             
+              }
+            
+              break;
+          }
+        // order data by high temp in descending order
+          case 'h': {
+              
+              // bubble sort algorithm to order high temp in descending order
+              for (i = 1; i < count; i++) {
+                  for (j = 0; j < count-i; j++) {
+                      
+                    // if days[j].high is smaller than days[j+1].high, swap the order of of these two structs in array so the temp high is in descending order
+                       if (days[j].high< days[j+1].high) {
+                           
+                           //  when out of order = true,  swap all the structs in days[], not just values of day[].high
+                              Weather temp = days[j];
+                              days[j] = days[j+1];
+                              days[j+1] = temp;
+                       }
+                  }
+                                             
+              }
+              break;
+          }
+        // order data by avg temp in descending order
+          case 'a': {
+              
+              // bubble sort algorithm to order avg temp in descending order
+              for (i = 1; i < count; i++) {
+                  for (j = 0; j < count-i; j++) {
+                      
+                    // if days[j].avg is smaller than days[j+1].avg, swap the order of of these two structs in array so the avg temp is in descending order
+                       if (days[j].avg < days[j+1].avg ) {
+                           
+                           //  when out of order = true,  swap all the structs in days[], not just values of day[].avg
+                              Weather temp = days[j];
+                              days[j] = days[j+1];
+                              days[j+1] = temp;
+                       }
+                  }
+                                             
+              }
+              break;
+          }
+        
+        // order data by low temp in descending order
+          case 'l': {
+              
+              // bubble sort algorithm to order low temp in descending order
+               for (i = 1; i < count; i++) {
+                   for (j = 0; j < count-i; j++) {
+                       
+                     // if days[j].low is smaller than days[j+1].low, swap the order of of these two structs in array so the temp low is in descending order
+                        if (days[j].low < days[j+1].low ) {
+                            
+                            //  when out of order = true,  swap all the structs in days[], not just values of day[].low
+                               Weather temp = days[j];
+                               days[j] = days[j+1];
+                               days[j+1] = temp;
+                        }
+                   }
+                                              
+               }
+               break;
+          }
+        
+        // order data by avg precip in descending order
+          case 'p': {
+              
+              // bubble sort algorithm based to corder precip in descending order
+              for (i = 1; i < count; i++) {
+                  for (j = 0; j < count-i; j++) {
+                      
+                    // if days[j].precip is smaller than days[j+1].precip, swap the order of of these two structs in array so precip is in descending order
+                       if (days[j].precip < days[j+1].precip ) {
+                           
+                           //  when out of order = true,  swap all the structs in days[] not just values of day[].precip
+                              Weather temp = days[j];
+                              days[j] = days[j+1];
+                              days[j+1] = temp;
+                        }
+                  }
+                                             
+              }
+               break;
+          }
+
+        // order data by weather events in alphabetical order
+          case 'e': {
+              
+              // bubble sort algorithm based to order event in alphabetical order
+              for (i = 1; i < count; i++) {
+                  for (j = 0; j < count-i; j++) {
+                      
+                    // if days[j].event is smaller than days[j+1].event, swap the order of of these two structs in array so event in alphabetical order
+                       if (days[j].event > days[j+1].event) {
+                           
+                           //  when out of order = true,  swap all the structs in days[], not just values of day[].event
+                              Weather temp = days[j];
+                              days[j] = days[j+1];
+                              days[j+1] = temp;
+                        }
+                }
+                                             
+              }
+               break;
+          }
+                      }
+
+} // function end bracket
+
+
+
